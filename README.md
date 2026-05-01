@@ -1699,8 +1699,8 @@ account can become Global Admin. The approval workflow is the control.
 > Open to cybersecurity opportunities in Qatar and GCC region.
 > Specializing in Microsoft Security stack — Sentinel, Defender, Azure Security.
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue)](YOUR_LINKEDIN_URL)
-[![GitHub](https://img.shields.io/badge/GitHub-Portfolio-black)](YOUR_GITHUB_URL)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue)]([YOUR_LINKEDIN_URL](https://www.linkedin.com/in/hurly-cabalan-9954a1216/?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base_contact_details%3BsUujfXKcQFqR711gwWmtMg%3D%3D))
+[![GitHub](https://img.shields.io/badge/GitHub-Portfolio-black)]([YOUR_GITHUB_URL](https://github.com/hurlycabalan/Soc-Investigation))
 
 ---
 
