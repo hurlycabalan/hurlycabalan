@@ -10,7 +10,7 @@
 
 | Scenario | Cert | Domain | Status | Exam Topics Covered | MITRE | QCSF |
 |---|---|---|---|---|---|---|
-| 01 - Brute Force Detection | SC-200 | Identity | 🔴 Not Started | Analytics Rules, KQL, Incidents | T1110 | ✅ |
+| 01 - Brute Force Detection | SC-200 | Identity | 🟡 In Progress | Analytics Rules, KQL, Incidents | T1110 | ✅ |
 | 02 - Insider Threat / Privilege Escalation | SC-200 | Identity | 🔴 Not Started | PIM, UEBA, Hunting | T1078 | ✅ |
 | 03 - C2 Beacon Detection | SC-200 | Threat Hunting | 🔴 Not Started | Hunting Queries, DeviceNetworkEvents | T1071 | ✅ |
 | 04 - Account Takeover | SC-200 | Identity | 🔴 Not Started | SigninLogs, SOAR, Playbooks | T1586 | ✅ |
@@ -189,11 +189,12 @@
 
 ---
 
-## 🔴 Scenario 01 — Brute Force Attack Detection
+## 🟡 Scenario 01 — Brute Force Attack Detection
 
 **Cert:** SC-200 | **Domain:** Mitigate Threats Using Microsoft Sentinel
 **Exam Topics:** Analytics Rules, KQL, Incidents, Alerts, Playbooks
-**Status:** 🔴 Not Started
+**Status:** 🟡 In Progress
+**Lab Date:** 5/3/2026 | **Environment:** Microsoft Sentinel — soc-workspace | **Analyst:** Hurly Cabalan
 
 ---
 
@@ -252,27 +253,28 @@ SigninLogs
 ### 🔍 Investigation
 | Step | Action | Finding |
 |---|---|---|
-| 1 | Query SigninLogs for failed attempts | 47 failed attempts from single IP |
-| 2 | Check IP against threat intelligence | IP flagged as malicious in TI feed |
-| 3 | Check for successful login after failures | 1 successful login after 47 failures |
-| 4 | Review post-login activity | Unusual file access detected |
-| 5 | Timeline correlation | Account compromised at [TIME] |
+| 1 | Query SigninLogs baseline — take 10 | 6 rows returned, all ResultType = 0 (SUCCESS) — no failed logins in clean baseline |
+| 2 | Run detection query before simulation | 0 results — dev tenant had no attack data, clean environment confirmed |
+| 3 | Created test user in Microsoft Entra ID | testuser01@hurlysoclaboutlook.onmicrosoft.com created for safe simulation |
+| 4 | Simulated brute force — 3 failed login attempts | Used Chrome new profile to avoid SSO conflict with main account |
+| 5 | Re-ran detection query after simulation | 1 row returned — testuser01, IP 20.21.211.28, FailedAttempts = 3 |
 
 **Evidence & Artifacts:**
-- [ ] Screenshot: Sentinel incident dashboard
-- [ ] Screenshot: KQL query results
-- [ ] Screenshot: TI IP match
-- [ ] Screenshot: Successful login after brute force
+- [x] SC01-BF-00-initial-query-history.png — Sentinel Logs query history, baseline before simulation
+- [x] SC01-BF-01-query-no-results-zoom.png — Detection query, 0 results before attack simulation
+- [x] SC01-BF-02-query-no-results-fullpage.png — Full page confirmation, 0 results
+- [x] SC01-BF-03-detection-hit-zoom.png — Detection query hit, FailedAttempts = 3
+- [x] SC01-BF-04-detection-hit-fullpage.png — Full page, testuser01, IP 20.21.211.28, 5/3/2026 10:15 AM
 
 **Incident Timeline:**
 | Time | Event |
 |---|---|
-| T+0 | First failed login attempt |
-| T+10min | Analytics rule triggers alert |
-| T+12min | SOC analyst picks up incident |
-| T+15min | Investigation begins |
-| T+20min | Compromised account identified |
-| T+25min | Mitigation executed |
+| 8:45 AM | Analyst arrives library, Sentinel open |
+| 9:26 AM | Baseline query run — SigninLogs take 10, 6 rows all SUCCESS |
+| 9:35 AM | Detection query run — 0 results, clean baseline documented |
+| 9:50 AM | testuser01 created in Microsoft Entra ID |
+| 10:05 AM | 3 failed login attempts simulated via Chrome new profile |
+| 10:15 AM | Detection query re-run — 1 row, FailedAttempts = 3, IP 20.21.211.28 |
 
 ---
 
@@ -280,10 +282,10 @@ SigninLogs
 
 | Field | Answer |
 |---|---|
-| **Classification** | ✅ True Positive |
-| **Justification** | 47 failed attempts + successful login + TI-flagged IP = confirmed attack |
-| **Confidence Level** | 🟢 Strong — multi-source corroboration |
-| **Control That Failed** | MFA not enforced — attacker succeeded with password alone |
+| **Classification** | ✅ True Positive (simulated) |
+| **Justification** | 3 failed attempts from single IP within 5-minute bin — matches brute force pattern |
+| **Confidence Level** | 🟡 Medium — threshold met, but dev environment only. In production would correlate with TI and post-login activity |
+| **Control That Failed** | MFA not enforced on testuser01 — attacker could succeed with password alone |
 
 ---
 
@@ -315,6 +317,8 @@ SigninLogs
 | Distributed spray | Attacker uses many IPs — each IP only attempts once | Hunt for same UserPrincipalName across multiple source IPs |
 | Valid MFA token stolen | Attacker passes MFA via adversary-in-the-middle proxy | Identity Protection impossible travel + session anomaly |
 | Insider with valid credentials | No brute force — direct login | UEBA behavioral baseline deviation |
+
+> **Lab Finding:** Initial query returned 0 results before simulation. This is the Detection Failure Mode in action — detection logic is correct but environment must have attack data. In production, organic failed logins from real users and external scanners would populate this table continuously.
 
 ---
 
@@ -377,15 +381,17 @@ SigninLogs
 ---
 
 ### 📚 Lessons Learned
-- [ ] What detection worked well?
-- [ ] What slowed investigation?
-- [ ] Were data connectors properly configured?
-- [ ] Was analytics rule threshold correctly tuned?
+- [x] Detection query worked correctly — SigninLogs filtered by ResultType != 0 surfaced brute force pattern immediately after simulation
+- [x] 0 results before simulation is valid documentation — proves clean baseline, not a query failure
+- [x] Dev tenant requires manual attack simulation — no organic threat data unlike production environments
+- [x] SSO conflict issue — Edge browser shares Microsoft session cookies even in InPrivate mode. Fix: use Chrome new profile for test user simulation
+- [x] File naming in Windows — do not include .png in copy-pasted filename, Windows auto-appends extension causing double .png.png
+- [x] testuser01 created in Microsoft Entra ID as safe simulation account — avoids risk of locking main admin account
 
 ### 🔧 What Could Be Done Better
-- [ ] Improvement 1
-- [ ] Improvement 2
-- [ ] Improvement 3
+- [x] Should have taken screenshot of failed login screen during simulation — missing from evidence set
+- [x] Simulate more than 3 failed attempts next session to hit the >10 threshold in the optimized KQL query
+- [x] Connect Threat Intelligence connector to validate IP against TI feed — currently not configured in free tier
 
 ---
 
@@ -1703,4 +1709,4 @@ account can become Global Admin. The approval workflow is the control.
 [![GitHub](https://img.shields.io/badge/GitHub-Portfolio-black)](https://github.com/hurlycabalan/Soc-Investigation)
 ---
 
-*Last Updated: May 2026 | Version 2.0 — Full SOC Investigation Framework*
+*Last Updated: May 2026 | Version 2.1 — Scenario 01 Lab Evidence Added*
